@@ -1,0 +1,33 @@
+diff a/upscale_auto.py b/upscale_auto.py	(rejected hunks)
+@@ -98,28 +98,28 @@
+         print(f"[ERRO CRÍTICO] Falha ao baixar ou instalar o Real-ESRGAN: {e}")
+         sys.exit(1)
+ 
+-def main():
++def main():_
+     parser = argparse.ArgumentParser(description="Automatiza o upscale de imagens usando Real-ESRGAN.")
+     parser.add_argument("-i", "--input", required=True, help="Pasta contendo as imagens de entrada.")
+     parser.add_argument("-o", "--output", required=True, help="Pasta para salvar as imagens processadas.")
+     parser.add_argument("-m", "--model", default=DEFAULT_MODEL, help=f"Modelo do Real-ESRGAN a ser usado (padrão: {DEFAULT_MODEL}).")
+     parser.add_argument("-s", "--scale", type=int, choices=[2, 4], default=4, help="Fator de escala para o upscale (2x ou 4x).")
++    parser.add_argument("-f", "--format", type=str, choices=['png', 'jpg', 'webp'], default='png', help="Formato da imagem de saída (png, jpg, webp).")
+     parser.add_argument("--install-dir", default=os.path.join(os.path.expanduser("~"), ".local", "bin"), help="Diretório para instalar/procurar o Real-ESRGAN.")
+     
+     args = parser.parse_args()
+ 
+     os.makedirs(args.output, exist_ok=True)
+     realesrgan_exe = setup_realesrgan(args.install_dir)
+-    
+     image_files = [f for f in os.listdir(args.input) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
+     
+     if not image_files:
+         print("[AVISO] Nenhuma imagem encontrada na pasta de entrada.")
+         return
+ 
+-    print(f"
++    print(f"\n[INFO] {len(image_files)} imagens encontradas. Iniciando processo...")
+ [INFO] {len(image_files)} imagens encontradas. Iniciando processo...")
+ 
+     for filename in tqdm(image_files, desc="Processando imagens"):
+         input_path = os.path.join(args.input, filename)
+         base_name = os.path.splitext(filename)[0]
