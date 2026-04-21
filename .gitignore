@@ -2,3 +2,10 @@ venv/
 gerar_imagem_teste.py
 input_test/
 output_test/
+
+# Pastas de ambiente e teste
+venv/
+input_test/
+output_test/
+*.pyc
+__pycache__/
