@@ -110,21 +110,46 @@ def main():
         print("[AVISO] Nenhuma imagem encontrada na pasta de entrada.")
         return
 
-    print(f"\n[INFO] {len(image_files)} imagens encontradas. Iniciando processo...")
-    for filename in tqdm(image_files, desc="Processando imagens"):
-        input_path = os.path.join(args.input, filename)
-        base_name = os.path.splitext(filename)[0]
-        output_path = os.path.join(args.output, f"{base_name}_upscaled_{args.scale}x.{args.format}")
+    print(f"\n[INFO] {len(image_files)} imagens encontradas. Iniciando processo em lote (batch processing)...")
+
+    # Cria um diretório temporário para a saída bruta do Real-ESRGAN
+    import tempfile
+    import shutil
+    temp_out_dir = tempfile.mkdtemp()
+
+    try:
+        # Executa o Real-ESRGAN em todo o diretório de entrada
+        command = [realesrgan_exe, "-i", args.input, "-o", temp_out_dir, "-n", args.model, "-s", str(args.scale), "-f", args.format]
+        print(f"[INFO] Executando comando: {' '.join(command)}")
         
-        command = [realesrgan_exe, "-i", input_path, "-o", output_path, "-n", args.model, "-s", str(args.scale)]
+        # O Real-ESRGAN não tem uma barra de progresso fácil de capturar via CLI no batch mode para o tqdm do Python de forma simples.
+        # Então rodamos o comando inteiro.
         result = subprocess.run(command, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
-            tqdm.write(f"[ERRO] Upscale de '{filename}' falhou: {result.stderr}")
+            print(f"[ERRO] Falha no processamento em lote:\n{result.stderr}")
         else:
-            tqdm.write(f"[INFO] '{filename}' processado com sucesso -> '{os.path.basename(output_path)}'.")
+            print("[INFO] Processamento pelo Real-ESRGAN concluído. Renomeando e movendo arquivos...")
 
-    print("\n[SUCESSO] Processo concluído.")
+            # Renomeia os arquivos gerados e os move para a pasta de destino final
+            for filename in tqdm(image_files, desc="Finalizando imagens"):
+                base_name = os.path.splitext(filename)[0]
+                temp_filename = f"{base_name}.{args.format}"
+                temp_filepath = os.path.join(temp_out_dir, temp_filename)
+
+                final_filename = f"{base_name}_upscaled_{args.scale}x.{args.format}"
+                final_filepath = os.path.join(args.output, final_filename)
+
+                if os.path.exists(temp_filepath):
+                    shutil.move(temp_filepath, final_filepath)
+                    # tqdm.write(f"[INFO] Movido para -> '{final_filename}'.")
+                else:
+                    tqdm.write(f"[AVISO] Arquivo esperado '{temp_filename}' não encontrado na saída do Real-ESRGAN.")
+
+            print("\n[SUCESSO] Processo concluído.")
+    finally:
+        # Limpa a pasta temporária
+        shutil.rmtree(temp_out_dir, ignore_errors=True)
 
 if __name__ == "__main__":
     main()
